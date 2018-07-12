@@ -1,35 +1,41 @@
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 
 public class Controller {
-
+	static AtomicIntegerArray connectionEstablished;
+	static ArrayList<LinkedBlockingQueue<Message>> clientQueueList;
+	static LinkedBlockingQueue<Message> serverQueue;
+	static int thisNodesID;
+	
+	
+	
 	public static void main(String[] args) {
 //TODO: remove args override
 		args =new String[1];
 		args[0]="src\\config.txt";
 		
-		
-		Config conf= new Config(args[0]);
-		System.out.print(conf.getNumNodes()+" ");
-		System.out.print(conf.getInterRequestDelay()+" ");
-		System.out.print(conf.getCSExecutionTime()+" ");
-		System.out.println(conf.getNumRequests()+" ");
-		System.out.println("Node ID list:");
-		for(int i=0;i<conf.getNodeIDList().length;i++)
-		{
-			for(int j=0;j<conf.getNodeIDList()[i].length;j++)
-			{
-				System.out.print(conf.getNodeIDList()[i][j]+" ");
-			}
-			System.out.println();
-		}
-		System.out.println("Quorum list:");
-		for(int i=0;i<conf.getQuorumList().size();i++)
-		{
-			for(int j=0;j<conf.getQuorumList().get(i).size();j++)
-			{
-				System.out.print(conf.getQuorumList().get(i).get(j)+" ");
-			}
-			System.out.println();
-		}
+
 	}
 
+	
+	
+	
+	
+	
+	//returns dcxx part of host name
+	public static String getdcxxName()
+	{
+		String hostName="";
+		try {
+		hostName=InetAddress.getLocalHost().getHostName();
+		}
+		catch(Exception e)
+		{	
+			e.printStackTrace();
+		}
+		String[] temp = hostName.split("\\.");
+		return temp[0];
+	}
 }
