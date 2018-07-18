@@ -33,8 +33,10 @@ public class Controller {
 		Thread serverThread = new Thread(s);
 		serverThread.start();
 		//create client threads
+		clientQueueList = new ArrayList<LinkedBlockingQueue<Message>>();
 		for(int i=0;i<conf.getNumNodes();i++)
 		{
+			clientQueueList.add(new LinkedBlockingQueue<Message>());
 			if(i!=thisNodesID)
 			{
 				String hostNamearg=conf.getNodeIDList()[i][1];
