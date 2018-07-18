@@ -12,9 +12,9 @@ public class Client implements Runnable{
 	String hostAddr;
 	int listenPort;
 	AtomicIntegerArray connectionEstablished; //stores the status of the connections (1 if connection is established, 0 otherwise)
-	int connectionIndex;
+	int targetID;
 	LinkedBlockingQueue<Message> clientQueue;
-	public Client(int IDarg, String hostNamearg, int listenPortarg, LinkedBlockingQueue<Message> q, AtomicIntegerArray connArray, int index)  //info for node being connected to
+	public Client(int IDarg, String hostNamearg, int listenPortarg, LinkedBlockingQueue<Message> q, AtomicIntegerArray connArray, int tID)  //info for node being connected to
 	{
 		ID=IDarg;
 		hostName=hostNamearg;
@@ -22,7 +22,7 @@ public class Client implements Runnable{
 		hostAddr=hostName+".utdallas.edu";
 		clientQueue = q;
 		connectionEstablished=connArray;
-		connectionIndex=index;
+		targetID=tID;
 	}
 	
     public void run(){
@@ -36,7 +36,7 @@ public class Client implements Runnable{
     			socket = new Socket(hostAddr,listenPort);
     			retry=false;
     			System.out.println("connected to "+hostAddr);
-    			connectionEstablished.set(connectionIndex, 1);
+    			connectionEstablished.set(targetID, 1);
     		}
     		catch(ConnectException e)
     		{
@@ -58,8 +58,7 @@ public class Client implements Runnable{
     		{
     			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
     			Message m = clientQueue.take();
-    			oos.writeObject(m);	
-    				
+    			oos.writeObject(m);			
     		}
     	}
     	catch(Exception e){}

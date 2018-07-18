@@ -1,6 +1,5 @@
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 public class Server implements Runnable{   	
     private static ServerSocket server;
