@@ -7,7 +7,7 @@ public class Config {
 	int csExecutionTime;
 	int numRequests;
 	String [][] nodeIDList;
-	ArrayList<ArrayList<String>> quorumList;
+	ArrayList<ArrayList<Integer>> quorumList;
 	
 	Config(String filepath)
 	{ 
@@ -48,7 +48,7 @@ public class Config {
 				numRequests=Integer.parseInt(tokens[3]);
 				readFirstLine=true;
 				nodeIDList=new String [numNodes][3];
-				quorumList=new ArrayList<ArrayList<String>>(numNodes);
+				quorumList=new ArrayList<ArrayList<Integer>>(numNodes);
 				continue;
 			}
 			if(counter1<numNodes) 
@@ -63,7 +63,7 @@ public class Config {
 			
 			if(counter2<numNodes)
 			{
-				quorumList.add(new ArrayList<String>());
+				quorumList.add(new ArrayList<Integer>());
 				String[] tokens = line.split("\\s+");
 				for(int i=0;i<tokens.length;i++)
 				{
@@ -71,7 +71,7 @@ public class Config {
 					{
 						break;
 					}
-					quorumList.get(counter2).add(tokens[i]);
+					quorumList.get(counter2).add(Integer.parseInt(tokens[i]));
 				}
 				counter2++;
 			}	
@@ -98,7 +98,7 @@ public class Config {
 	{
 		return nodeIDList;
 	}
-	public ArrayList<ArrayList<String>> getQuorumList()
+	public ArrayList<ArrayList<Integer>> getQuorumList()
 	{
 		return quorumList;
 	}
