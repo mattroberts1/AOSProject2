@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.io.BufferedWriter;
 public class Controller {
 	static AtomicIntegerArray connectionEstablished;
 	static ArrayList<LinkedBlockingQueue<Message>> clientQueueList;
@@ -52,7 +53,7 @@ public class Controller {
 			try {Thread.sleep((long)getExpRandom(conf.getInterRequestDelay()));} //wait exp random time
 			catch(Exception e) {e.printStackTrace();}
 		}
-		
+		System.out.println("done.");
 	}
 
 	//establishes connections to all other nodes, blocks until all other nodes are online
@@ -107,6 +108,25 @@ public class Controller {
 	//does printing to logfile and waiting for generated exponential random cs execution time
 	public static void doCS()
 	{
+		try{FileWriter fw1 = new FileWriter("logfile", true);
+			    BufferedWriter bw1 = new BufferedWriter(fw1);
+			    PrintWriter out1 = new PrintWriter(bw1);
+			    out1.println(thisNodesID+" entering CS");
+			    out1.close();
+		}
+			 catch (Exception e) {e.printStackTrace();}
+		try {Thread.sleep((long)getExpRandom(conf.getCSExecutionTime()));} //spend some time in cs
+		catch(Exception e) {e.printStackTrace();}
+
+		try{FileWriter fw2 = new FileWriter("logfile", true);
+			BufferedWriter bw2 = new BufferedWriter(fw2);
+			PrintWriter out2 = new PrintWriter(bw2);
+			out2.println(thisNodesID+" leaving CS");
+			out2.close();
+			}
+		catch (Exception e) {e.printStackTrace();}
+		
+		/*
 		FileWriter  w;
 		PrintWriter pw=null;
 		try 
@@ -121,6 +141,7 @@ public class Controller {
 		pw.println(thisNodesID+" leaving CS");
 		pw.flush();
 		pw.close();
+		*/
 	}
 	
 	//returns a random value with exponential distribution and mean of lampda
