@@ -7,15 +7,15 @@ public class Message implements Serializable {
 	int senderNode=-1;
 	int receiverNode=-1;
 	String text="";  
-
 	String messageType="";  
-
-	public Message(int from, int to, String m, String type)
+	CSRequest request;
+	public Message(int from, int to, String m, String type,CSRequest r)
 	{
 		senderNode=from;
 		receiverNode=to;
 		text=m;
 		messageType=type;
+		request=r;
 	}
 	public String getText()
 	{

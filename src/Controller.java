@@ -1,3 +1,5 @@
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -13,38 +15,46 @@ public class Controller {
 	static ArrayList<Integer> quorumIDList;
 	static AtomicInteger clock;
 	static AtomicInteger csStatus; //0 for not waiting on cs, 1 for waiting, 2 for in cs
+	static MaekawaCallable csGateway;
+	static int requestsRemaining;
+	static LinkedBlockingQueue<Message> interThreadComm;
 	public static void main(String[] args) {
-		
-		
-		
-		/*test code for priorityqueue and comparator
-		MaekawaProtocol maekawaProtocol = new MaekawaProtocol();
-		Thread mpThread = new Thread(maekawaProtocol);
-		mpThread.start();
-		try{Thread.sleep(10000);}catch(Exception e) {}
-		*/		
-		
-		
-		
 		clock=new AtomicInteger(0);
 		conf=new Config(args[0]);
+		requestsRemaining=conf.getNumRequests();
 		//find id of this node
 		thisNodesName=getdcxxName();
 		thisNodesID=getNodeID(thisNodesName);
-
+		
 		//create all the socket connections
 		setupConnections();
 		System.out.println("all nodes are online");
 		
 		//set up maekawa stuff
+		LinkedBlockingQueue<Message> interThreadComm= new LinkedBlockingQueue<Message>();
 		quorumIDList=conf.getQuorumList().get(thisNodesID);
+		csGateway= new MaekawaCallable(interThreadComm);
+		MaekawaProtocol maekawaProtocol = new MaekawaProtocol(clientQueueList,serverQueue,interThreadComm,quorumIDList);
+		Thread mpThread = new Thread(maekawaProtocol);
+		mpThread.start();
 		
+
+		try {Thread.sleep(5000);} //give some time to make sure all other nodes have maekawa stuff set up before starting communication
+		catch(Exception e) {e.printStackTrace();}
+		
+		
+		//loop for application
+		while(requestsRemaining>0)
+		{
+			doCSRequest();
+			clock.incrementAndGet();
+			requestsRemaining--;
+			try {Thread.sleep((long)getExpRandom(conf.getInterRequestDelay()));} //wait exp random time
+			catch(Exception e) {e.printStackTrace();}
+		}
 		
 	}
 
-	
-	
-	
 	//establishes connections to all other nodes, blocks until all other nodes are online
 	public static void setupConnections()
 	{
@@ -86,14 +96,40 @@ public class Controller {
 		}
 	}
 	
-	
-	public static void makeCSRequest()
+	//asks maekawa protcolo for permission to enter cs, blocks until permission granted, calls doCS, then tells mp node has left cs
+	public static void doCSRequest()
 	{
-	
-		clock.incrementAndGet();
+		csGateway.enterCS(thisNodesID, clock);
+		doCS();
+		csGateway.leaveCS();
 	}
 	
+	//does printing to logfile and waiting for generated exponential random cs execution time
+	public static void doCS()
+	{
+		FileWriter  w;
+		PrintWriter pw=null;
+		try 
+		{
+			w= new FileWriter("logfile");
+			pw = new PrintWriter(w);
+		}
+		catch(Exception e) {e.printStackTrace();}
+		pw.println(thisNodesID+" entering CS");
+		try {Thread.sleep((long)getExpRandom(conf.getCSExecutionTime()));} //spend some time in cs
+		catch(Exception e) {e.printStackTrace();}
+		pw.println(thisNodesID+" leaving CS");
+		pw.flush();
+		pw.close();
+	}
 	
+	//returns a random value with exponential distribution and mean of lampda
+	public static double getExpRandom(int lampda)
+	{
+		return -lampda *Math.log(Math.random());
+
+	}
+
 	//returns dcxx part of host name for this node
 	public static String getdcxxName()
 	{
