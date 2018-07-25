@@ -15,10 +15,10 @@ public class Controller {
 	static Config conf;
 	static ArrayList<Integer> quorumIDList;
 	static AtomicInteger clock;
-	static AtomicInteger csStatus; //0 for not waiting on cs, 1 for waiting, 2 for in cs
+	static AtomicInteger csStatus; //0 for not waiting on cs, 1 for waiting, 2 for in cs/permission granted
 	static MaekawaCallable csGateway;
 	static int requestsRemaining;
-	static LinkedBlockingQueue<Message> interThreadComm;
+	static LinkedBlockingQueue<CSRequest> interThreadComm;
 	public static void main(String[] args) {
 		clock=new AtomicInteger(0);
 		conf=new Config(args[0]);
@@ -32,10 +32,10 @@ public class Controller {
 		System.out.println("all nodes are online");
 		
 		//set up maekawa stuff
-		LinkedBlockingQueue<Message> interThreadComm= new LinkedBlockingQueue<Message>();
+		interThreadComm= new LinkedBlockingQueue<CSRequest>();
 		quorumIDList=conf.getQuorumList().get(thisNodesID);
-		csGateway= new MaekawaCallable(interThreadComm);
-		MaekawaProtocol maekawaProtocol = new MaekawaProtocol(clientQueueList,serverQueue,interThreadComm,quorumIDList);
+		csGateway= new MaekawaCallable(interThreadComm,csStatus);
+		MaekawaProtocol maekawaProtocol = new MaekawaProtocol(clientQueueList,serverQueue,interThreadComm,quorumIDList,csStatus);
 		Thread mpThread = new Thread(maekawaProtocol);
 		mpThread.start();
 		

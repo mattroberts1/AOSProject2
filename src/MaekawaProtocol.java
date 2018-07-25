@@ -8,9 +8,11 @@ public class MaekawaProtocol implements Runnable{
 	PriorityBlockingQueue<CSRequest> requestQueue;
 	static ArrayList<LinkedBlockingQueue<Message>> clientQueueList;
 	static LinkedBlockingQueue<Message> serverQueue;
-	static LinkedBlockingQueue<Message> interThreadComm;
+	static LinkedBlockingQueue<CSRequest> interThreadComm;
 	static ArrayList<Integer> quorumIDList;
-	public MaekawaProtocol(ArrayList<LinkedBlockingQueue<Message>> cql,LinkedBlockingQueue<Message> sq,LinkedBlockingQueue<Message> itc,ArrayList<Integer> qidl )
+	static AtomicInteger csStatus;
+	public MaekawaProtocol(ArrayList<LinkedBlockingQueue<Message>> cql,LinkedBlockingQueue<Message> sq,LinkedBlockingQueue<CSRequest> itc,
+			ArrayList<Integer> qidl, AtomicInteger status)
 	{
 		clientQueueList=cql;
 		serverQueue=sq;
@@ -18,9 +20,25 @@ public class MaekawaProtocol implements Runnable{
 		requestQueue = new PriorityBlockingQueue<CSRequest>(1,comparator);
 		interThreadComm=itc;
 		quorumIDList=qidl;
+		csStatus=status;
 	}
 	
 	public void run(){
+		while(true)
+		{
+			//check if received request from this node
+			CSRequest myRequest=interThreadComm.poll();
+			if(myRequest!=null)
+			{
+				requestQueue.add(myRequest);
+			}
+			
+
+			
+			
+			
+			
+		}
 
 	}
 }

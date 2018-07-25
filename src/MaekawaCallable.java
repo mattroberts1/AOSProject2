@@ -2,24 +2,31 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MaekawaCallable{
-	static LinkedBlockingQueue<Message> interThreadComm;
+	static LinkedBlockingQueue<CSRequest> interThreadComm;
+	static AtomicInteger csStatus;
 	//pass way to communicate with MaekawaProtocol thread
-	public MaekawaCallable(LinkedBlockingQueue<Message> itc)
+	public MaekawaCallable(LinkedBlockingQueue<CSRequest> itc, AtomicInteger status)
 	{
 		interThreadComm=itc;
+		csStatus=status;
 	}
-	
+
 	//block until ok to enter cs then return
 	public void enterCS(int id, AtomicInteger ts)
 	{
 		CSRequest newRequest=new CSRequest(id,ts);
-//TODO pass cs request to maekawa protocol
-//TODO wait for response from maekawa protocol saying it's ok to enter cs
-
+		interThreadComm.add(newRequest);
+		csStatus.set(1);
+		while(csStatus.get()!=2)  //loop until maekawaprotocol sets csStatus to 2 meaning this node can enter cs then return
+		{
+			try {wait();}
+				catch(Exception e) {}  
+		}
 	}
+
 	//let MaekawaProtocol know application has left cs
 	public void leaveCS()
 	{
-//TODO tell maekawa protocol that node has left cs		
+		csStatus.set(0);		
 	}
 }
