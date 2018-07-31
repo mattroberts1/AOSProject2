@@ -18,8 +18,8 @@ public class Controller {
 	static AtomicInteger csStatus; //0 for not waiting on cs, 1 for waiting, 2 for in cs/permission granted
 	static MaekawaCallable csGateway;
 	static int requestsRemaining;
-	static LinkedBlockingQueue<CSRequest> interThreadComm;
 	public static void main(String[] args) {
+		csStatus=new AtomicInteger(0);
 		clock=new AtomicInteger(0);
 		conf=new Config(args[0]);
 		requestsRemaining=conf.getNumRequests();
@@ -32,10 +32,9 @@ public class Controller {
 		System.out.println("all nodes are online");
 		
 		//set up maekawa stuff
-		interThreadComm= new LinkedBlockingQueue<CSRequest>();
 		quorumIDList=conf.getQuorumList().get(thisNodesID);
-		csGateway= new MaekawaCallable(interThreadComm,csStatus);
-		MaekawaProtocol maekawaProtocol = new MaekawaProtocol(clientQueueList,serverQueue,interThreadComm,quorumIDList,csStatus);
+		csGateway= new MaekawaCallable(clientQueueList, quorumIDList,csStatus);
+		MaekawaProtocol maekawaProtocol = new MaekawaProtocol(clientQueueList,serverQueue,quorumIDList,csStatus,thisNodesID);
 		Thread mpThread = new Thread(maekawaProtocol);
 		mpThread.start();
 		
@@ -70,14 +69,13 @@ public class Controller {
 		for(int i=0;i<conf.getNumNodes();i++)
 		{
 			clientQueueList.add(new LinkedBlockingQueue<Message>());
-			if(i!=thisNodesID)
-			{
+			
 				String hostNamearg=conf.getNodeIDList()[i][1];
 				int listenPortarg=Integer.parseInt(conf.getNodeIDList()[i][2]);
 				Client c = new Client(i, hostNamearg, listenPortarg, clientQueueList.get(i), connectionEstablished, i);
 				Thread clientThread= new Thread(c);
 				clientThread.start();
-			}
+			
 		}
 		//wait for all nodes to come online
 		boolean allConnected=false;
@@ -86,13 +84,12 @@ public class Controller {
 			allConnected=true;
 			for(int i=0;i<connectionEstablished.length();i++)
 			{
-				if(i!=thisNodesID) //don't connect node to itself
-				{
+				
 					if(connectionEstablished.get(i)==0)
 					{
 						allConnected=false;
 					}
-				}
+				
 			}
 		}
 	}
@@ -115,6 +112,7 @@ public class Controller {
 			    out1.close();
 		}
 			 catch (Exception e) {e.printStackTrace();}
+		System.out.println("Node "+thisNodesID+" doing CS.");
 		try {Thread.sleep((long)getExpRandom(conf.getCSExecutionTime()));} //spend some time in cs
 		catch(Exception e) {e.printStackTrace();}
 

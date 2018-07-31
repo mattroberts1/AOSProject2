@@ -21,6 +21,7 @@ public class ListenerSocket implements Runnable {
 				ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
 				Message m = (Message) ois.readObject();
 						serverQueue.put(m);
+						System.out.println("Received message of type "+m.getMessageType()+" from node "+m.getSender());
 			}
 		}
     	catch(Exception e){}

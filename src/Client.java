@@ -58,10 +58,12 @@ public class Client implements Runnable{
     		{
     			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
     			Message m = clientQueue.take();
-    			oos.writeObject(m);			
+    			oos.writeObject(m);	
+    			
+    			System.out.println("Sending message of type "+m.getMessageType()+" to node "+m.getReceiver());
     		}
     	}
-    	catch(Exception e){}
+    	catch(Exception e){e.printStackTrace();}
     }
 
 

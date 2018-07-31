@@ -7,7 +7,8 @@ public class Message implements Serializable {
 	int senderNode=-1;
 	int receiverNode=-1;
 	String text="";  
-	String messageType="";  //REQUEST, GRANT, INQUIRE, FAILED, RELINQUISH
+	String messageType="";  //REQUEST, GRANT, INQUIRE, FAILED, RELINQUISH, RELEASE  
+							//(release indicates cs has been completed, relinquish temporarily gives up lock)
 	CSRequest request;
 	public Message(int from, int to, String m, String type,CSRequest r)
 	{
@@ -32,5 +33,9 @@ public class Message implements Serializable {
 	public String getMessageType()
 	{
 		return messageType;
+	}
+	public CSRequest getRequest()
+	{
+		return request;
 	}
 }

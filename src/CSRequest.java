@@ -1,6 +1,8 @@
-import java.util.Comparator;
+
 import java.util.concurrent.atomic.AtomicInteger;
-public class CSRequest{
+import java.io.Serializable;
+public class CSRequest implements Serializable{
+	private static final long serialVersionUID = 1L;
 
 	int nodeID;
 	AtomicInteger timestamp;
