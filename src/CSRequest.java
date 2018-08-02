@@ -21,4 +21,13 @@ public class CSRequest implements Serializable{
 	{
 		return timestamp;
 	}
+	
+	public boolean equals(CSRequest other)
+	{
+		if(nodeID==other.getID()&&timestamp==other.getTimestamp())
+		{
+			return true;
+		}
+		return false;
+	}
 }

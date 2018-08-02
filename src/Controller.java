@@ -15,7 +15,7 @@ public class Controller {
 	static Config conf;
 	static ArrayList<Integer> quorumIDList;
 	static AtomicInteger clock;
-	static AtomicInteger csStatus; //0 for not waiting on cs, 1 for waiting, 2 for in cs/permission granted
+	static AtomicInteger csStatus; //0 for not waiting on cs, 1 for waiting, 2 for in cs, 3 for just finished cs, 4 for just entered cs request
 	static MaekawaCallable csGateway;
 	static int requestsRemaining;
 	public static void main(String[] args) {
@@ -33,8 +33,8 @@ public class Controller {
 		
 		//set up maekawa stuff
 		quorumIDList=conf.getQuorumList().get(thisNodesID);
-		csGateway= new MaekawaCallable(clientQueueList, quorumIDList,csStatus);
-		MaekawaProtocol maekawaProtocol = new MaekawaProtocol(clientQueueList,serverQueue,quorumIDList,csStatus,thisNodesID);
+		csGateway= new MaekawaCallable(clientQueueList, quorumIDList,csStatus,clock);
+		MaekawaProtocol maekawaProtocol = new MaekawaProtocol(clientQueueList,serverQueue,quorumIDList,csStatus,thisNodesID,clock);
 		Thread mpThread = new Thread(maekawaProtocol);
 		mpThread.start();
 		
@@ -97,7 +97,7 @@ public class Controller {
 	//asks maekawa protcolo for permission to enter cs, blocks until permission granted, calls doCS, then tells mp node has left cs
 	public static void doCSRequest()
 	{
-		csGateway.enterCS(thisNodesID, clock);
+		csGateway.enterCS();
 		doCS();
 		csGateway.leaveCS();
 	}
@@ -108,7 +108,7 @@ public class Controller {
 		try{FileWriter fw1 = new FileWriter("logfile", true);
 			    BufferedWriter bw1 = new BufferedWriter(fw1);
 			    PrintWriter out1 = new PrintWriter(bw1);
-			    out1.println(thisNodesID+" entering CS");
+			    out1.println(thisNodesID+"-entercs");
 			    out1.close();
 		}
 			 catch (Exception e) {e.printStackTrace();}
@@ -119,7 +119,7 @@ public class Controller {
 		try{FileWriter fw2 = new FileWriter("logfile", true);
 			BufferedWriter bw2 = new BufferedWriter(fw2);
 			PrintWriter out2 = new PrintWriter(bw2);
-			out2.println(thisNodesID+" leaving CS");
+			out2.println(thisNodesID+"-leavecs");
 			out2.close();
 			}
 		catch (Exception e) {e.printStackTrace();}
