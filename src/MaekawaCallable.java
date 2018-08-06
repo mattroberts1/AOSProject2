@@ -35,7 +35,6 @@ public class MaekawaCallable{
 	//let MaekawaProtocol know application has left cs
 	public void leaveCS()
 	{
-		System.out.println("leavecs called");
 		csStatus.set(3);		
 	}
 }

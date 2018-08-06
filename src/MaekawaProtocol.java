@@ -45,14 +45,14 @@ public class MaekawaProtocol implements Runnable{
 			//check whether this node just finished cs
 			if(csStatus.get()==3)
 			{
-				csStatus.set(0);
+			//	csStatus.set(0);
 				receivedFailed=false;
 				for(int i=0;i<quorumGrants.length;i++)
 				{
 					quorumGrants[i]=false;
-				}
-				System.out.println("broadcasting end of cs");	
+				}	
 				broadcastRelease();
+				csStatus.set(0);
 			}
 			
 			Message newMessage=serverQueue.poll();
@@ -83,22 +83,21 @@ public class MaekawaProtocol implements Runnable{
 		if(newMessage!=null&&newMessage.getMessageType().equals("REQUEST"))
 		{
 			CSRequest newRequest=newMessage.getRequest();
-			if(requestQueue.isEmpty())//no requests currently in queue
+			if(lockedID==-1)//no requests currently in queue
 			{
 				lockedID=newRequest.getID();
 				lockingRequest=newRequest;
-				Message grantMessage=new Message(thisNodesID,newRequest.getID(),"","GRANT",newRequest);
-				
+				Message grantMessage=new Message(thisNodesID,newRequest.getID(),"","GRANT",null);
 				clientQueueList.get(newRequest.getID()).add(grantMessage);
 			}
 			else if(lockedID!=-1&&comparator.compare(newRequest, lockingRequest)>0)  //new request has lower priority than request that holds lock
 			{
-				Message failedMessage=new Message(thisNodesID,newRequest.getID(),"","FAILED",newRequest);
+				Message failedMessage=new Message(thisNodesID,newRequest.getID(),"","FAILED",null);
 				clientQueueList.get(newRequest.getID()).add(failedMessage);
 			}
 			else //new request has higher priority than request that holds lock, send inquire to the node holding lock
 			{
-				Message inquireMessage=new Message(thisNodesID,lockedID,"","INQUIRE",newRequest);
+				Message inquireMessage=new Message(thisNodesID,lockedID,"","INQUIRE",lockingRequest);
 				clientQueueList.get(lockedID).add(inquireMessage);
 			}
 			 //if request came from this node, keep track of whether have received grants from all quorum nodes or received a failed message
@@ -142,6 +141,7 @@ public class MaekawaProtocol implements Runnable{
 		}
 	}
 
+
 	public void checkForInquire(Message newMessage)
 	{
 		if(newMessage!=null&&newMessage.getMessageType().equals("INQUIRE"))
@@ -157,9 +157,9 @@ public class MaekawaProtocol implements Runnable{
 						index=i;
 					}
 				}
-				quorumGrants[index]=false;
-				Message relinquishMessage=new Message(thisNodesID,newMessage.getSender(),"","RELINQUISH",includedRequest);
-				clientQueueList.get(newMessage.getSender()).add(relinquishMessage);
+					quorumGrants[index]=false;
+					Message relinquishMessage=new Message(thisNodesID,newMessage.getSender(),"","RELINQUISH",includedRequest);
+					clientQueueList.get(newMessage.getSender()).add(relinquishMessage);
 			}
 		}
 		
@@ -169,15 +169,15 @@ public class MaekawaProtocol implements Runnable{
 	{
 		if(newMessage!=null&&newMessage.getMessageType().equals("RELINQUISH"))
 		{
-			if(newMessage.getRequest().getID()!=lockingRequest.getID())
+			if(newMessage.getRequest().getID()==lockingRequest.getID())
 			{
-				System.out.println("ERROR, INVALID RELINQUISH.");
-			}
 				CSRequest topRequest=requestQueue.peek();
 				lockedID=topRequest.getID();
 				lockingRequest=topRequest;
 				Message grantMessage= new Message(thisNodesID,topRequest.getID(),"","GRANT",topRequest);
 				clientQueueList.get(topRequest.getID()).add(grantMessage);
+				
+			}
 		}
 	}
 

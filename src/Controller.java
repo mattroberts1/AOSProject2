@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.io.BufferedWriter;
 public class Controller {
 	static AtomicIntegerArray connectionEstablished;
+	static long startTime;
 	static ArrayList<LinkedBlockingQueue<Message>> clientQueueList;
 	static LinkedBlockingQueue<Message> serverQueue;
 	static int thisNodesID;
@@ -15,10 +16,12 @@ public class Controller {
 	static Config conf;
 	static ArrayList<Integer> quorumIDList;
 	static AtomicInteger clock;
+	static AtomicInteger messageCount;
 	static AtomicInteger csStatus; //0 for not waiting on cs, 1 for waiting, 2 for in cs, 3 for just finished cs, 4 for just entered cs request
 	static MaekawaCallable csGateway;
 	static int requestsRemaining;
 	public static void main(String[] args) {
+		messageCount=new AtomicInteger(0);
 		csStatus=new AtomicInteger(0);
 		clock=new AtomicInteger(0);
 		conf=new Config(args[0]);
@@ -41,18 +44,25 @@ public class Controller {
 
 		try {Thread.sleep(5000);} //give some time to make sure all other nodes have maekawa stuff set up before starting communication
 		catch(Exception e) {e.printStackTrace();}
-		
+		startTime=System.currentTimeMillis();
 		
 		//loop for application
 		while(requestsRemaining>0)
 		{
+			
 			doCSRequest();
 			clock.incrementAndGet();
 			requestsRemaining--;
+			System.out.println("CS request executed.  Requests remaining: "+requestsRemaining);
 			try {Thread.sleep((long)getExpRandom(conf.getInterRequestDelay()));} //wait exp random time
 			catch(Exception e) {e.printStackTrace();}
 		}
+		long runTime=System.currentTimeMillis()-startTime;
+		try {Thread.sleep(5000);}
+		catch(Exception e) {e.printStackTrace();}
 		System.out.println("done.");
+		System.out.println("Total messages sent by this node: "+messageCount.get());
+		System.out.println("Process took "+runTime+"ms to complete");
 	}
 
 	//establishes connections to all other nodes, blocks until all other nodes are online
@@ -72,7 +82,7 @@ public class Controller {
 			
 				String hostNamearg=conf.getNodeIDList()[i][1];
 				int listenPortarg=Integer.parseInt(conf.getNodeIDList()[i][2]);
-				Client c = new Client(i, hostNamearg, listenPortarg, clientQueueList.get(i), connectionEstablished, i);
+				Client c = new Client(i, hostNamearg, listenPortarg, clientQueueList.get(i), connectionEstablished, i, messageCount);
 				Thread clientThread= new Thread(c);
 				clientThread.start();
 			
@@ -123,23 +133,6 @@ public class Controller {
 			out2.close();
 			}
 		catch (Exception e) {e.printStackTrace();}
-		
-		/*
-		FileWriter  w;
-		PrintWriter pw=null;
-		try 
-		{
-			w= new FileWriter("logfile");
-			pw = new PrintWriter(w);
-		}
-		catch(Exception e) {e.printStackTrace();}
-		pw.println(thisNodesID+" entering CS");
-		try {Thread.sleep((long)getExpRandom(conf.getCSExecutionTime()));} //spend some time in cs
-		catch(Exception e) {e.printStackTrace();}
-		pw.println(thisNodesID+" leaving CS");
-		pw.flush();
-		pw.close();
-		*/
 	}
 	
 	//returns a random value with exponential distribution and mean of lampda

@@ -3,7 +3,7 @@ import java.net.Socket;
 import java.net.ConnectException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicIntegerArray;
-
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Client implements Runnable{
 
@@ -14,7 +14,8 @@ public class Client implements Runnable{
 	AtomicIntegerArray connectionEstablished; //stores the status of the connections (1 if connection is established, 0 otherwise)
 	int targetID;
 	LinkedBlockingQueue<Message> clientQueue;
-	public Client(int IDarg, String hostNamearg, int listenPortarg, LinkedBlockingQueue<Message> q, AtomicIntegerArray connArray, int tID)  //info for node being connected to
+	AtomicInteger messageCount;
+	public Client(int IDarg, String hostNamearg, int listenPortarg, LinkedBlockingQueue<Message> q, AtomicIntegerArray connArray, int tID, AtomicInteger count)  //info for node being connected to
 	{
 		ID=IDarg;
 		hostName=hostNamearg;
@@ -23,6 +24,7 @@ public class Client implements Runnable{
 		clientQueue = q;
 		connectionEstablished=connArray;
 		targetID=tID;
+		messageCount=count;
 	}
 	
     public void run(){
@@ -59,8 +61,8 @@ public class Client implements Runnable{
     			ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
     			Message m = clientQueue.take();
     			oos.writeObject(m);	
-    			
-    			System.out.println("Sending message of type "+m.getMessageType()+" to node "+m.getReceiver());
+    			messageCount.getAndIncrement();
+    		//	System.out.println("Sending message of type "+m.getMessageType()+" to node "+m.getReceiver());
     		}
     	}
     	catch(Exception e){e.printStackTrace();}
