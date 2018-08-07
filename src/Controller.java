@@ -34,6 +34,7 @@ public class Controller {
 		setupConnections();
 		System.out.println("all nodes are online");
 		
+		checkQuorums();
 		//set up maekawa stuff
 		quorumIDList=conf.getQuorumList().get(thisNodesID);
 		csGateway= new MaekawaCallable(clientQueueList, quorumIDList,csStatus,clock);
@@ -42,7 +43,7 @@ public class Controller {
 		mpThread.start();
 		
 
-		try {Thread.sleep(5000);} //give some time to make sure all other nodes have maekawa stuff set up before starting communication
+		try {Thread.sleep(thisNodesID*500+1000);} //give some time to make sure all other nodes have maekawa stuff set up before starting communication
 		catch(Exception e) {e.printStackTrace();}
 		startTime=System.currentTimeMillis();
 		
@@ -53,7 +54,7 @@ public class Controller {
 			doCSRequest();
 			clock.incrementAndGet();
 			requestsRemaining--;
-			System.out.println("CS request executed.  Requests remaining: "+requestsRemaining);
+			System.out.println("CS request executed.  Requests remaining: "+(int)requestsRemaining*100/conf.getNumRequests()+"%");
 			try {Thread.sleep((long)getExpRandom(conf.getInterRequestDelay()));} //wait exp random time
 			catch(Exception e) {e.printStackTrace();}
 		}
@@ -104,7 +105,7 @@ public class Controller {
 		}
 	}
 	
-	//asks maekawa protcolo for permission to enter cs, blocks until permission granted, calls doCS, then tells mp node has left cs
+	//asks maekawa protocol for permission to enter cs, blocks until permission granted, calls doCS, then tells mp node has left cs
 	public static void doCSRequest()
 	{
 		csGateway.enterCS();
@@ -169,5 +170,36 @@ public class Controller {
 			}
 		}
 		return id;
+	}
+	public static void checkQuorums()
+	{
+		ArrayList<ArrayList<Integer>> quorumList=conf.getQuorumList();
+		boolean validQuorum=true;
+		for(int i=0;i<quorumList.size();i++)//for each node in system
+		{
+			for(int j=0;j<quorumList.size();j++)//compare to every other node in system
+			{
+				boolean pairOK=false;
+				for(int iq=0;iq<quorumList.get(i).size();iq++)
+				{
+					for(int jq=0;jq<quorumList.get(j).size();jq++)
+					{
+						if(quorumList.get(i).get(iq)==quorumList.get(j).get(jq))
+						{
+							pairOK=true;
+						}
+					}
+				}
+				if(pairOK==false)
+				{
+					validQuorum=false;
+				}
+				
+			}
+		}
+		if(validQuorum==false)
+		{
+		System.out.println("WARNING, INVALID QUORUM DETECTED.  ");
+		}
 	}
 }

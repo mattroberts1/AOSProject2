@@ -80,10 +80,22 @@ public class MaekawaProtocol implements Runnable{
 	//if next message in queue is a new cs request handle it
 	public void checkForRequest(Message newMessage)
 	{
+		
 		if(newMessage!=null&&newMessage.getMessageType().equals("REQUEST"))
 		{
 			CSRequest newRequest=newMessage.getRequest();
-			if(lockedID==-1)//no requests currently in queue
+			
+			 //if request came from this node, keep track of whether have received grants from all quorum nodes or received a failed message
+			if(newRequest.getID()==thisNodesID)			
+			{
+				receivedFailed=false;
+				for(int i=0;i<quorumGrants.length;i++)
+				{
+					quorumGrants[i]=false;
+				}
+			}	
+			
+			if(lockedID==-1&&requestQueue.isEmpty())//no requests currently in queue
 			{
 				lockedID=newRequest.getID();
 				lockingRequest=newRequest;
@@ -95,20 +107,16 @@ public class MaekawaProtocol implements Runnable{
 				Message failedMessage=new Message(thisNodesID,newRequest.getID(),"","FAILED",null);
 				clientQueueList.get(newRequest.getID()).add(failedMessage);
 			}
-			else //new request has higher priority than request that holds lock, send inquire to the node holding lock
+			else if(lockedID!=-1&&comparator.compare(newRequest, lockingRequest)<0)//new request has higher priority than request that holds lock, send inquire to the node holding lock
 			{
 				Message inquireMessage=new Message(thisNodesID,lockedID,"","INQUIRE",lockingRequest);
 				clientQueueList.get(lockedID).add(inquireMessage);
 			}
-			 //if request came from this node, keep track of whether have received grants from all quorum nodes or received a failed message
-			if(newRequest.getID()==thisNodesID)			
+			else
 			{
-				receivedFailed=false;
-				for(int i=0;i<quorumGrants.length;i++)
-				{
-					quorumGrants[i]=false;
-				}
-			}		
+			//	System.out.println("ERROR DETECTED IN REQUEST MESSAGE HANDLING");
+			}
+	
 			requestQueue.add(newRequest); //always add request to queue
 		}
 	}
@@ -129,7 +137,7 @@ public class MaekawaProtocol implements Runnable{
 		}
 		if(newMessage!=null&&newMessage.getMessageType().equals("GRANT")&&csStatus.get()!=1)
 		{
-			System.out.println("ERROR, RECEIVED UNEXPECTED GRANT MESSAGE.");
+		//	System.out.println("ERROR, RECEIVED UNEXPECTED GRANT MESSAGE.");
 		}
 	}
 
@@ -189,7 +197,7 @@ public class MaekawaProtocol implements Runnable{
 			requestFound=requestQueue.remove(lockingRequest);		
 			if(!requestFound)
 			{
-				System.out.println("ERROR, INCORRECT RELEASE.  Expected request not found.  ");
+			//	System.out.println("ERROR, INCORRECT RELEASE.  Expected request not found.  ");
 			}
 			lockedID=-1;
 			lockingRequest=null;
